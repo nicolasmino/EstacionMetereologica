@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clima en Tiempo Real</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            width: 90%;
+            max-width: 400px;
+            margin: 20px;
+        }
+
+        .header {
+            background-color: #0073e6;
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .date {
+            font-size: 14px;
+        }
+
+        .main-info {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 20px;
+            background-color: #e3f2fd;
+        }
+
+        .temp {
+            font-size: 48px;
+            color: #0073e6;
+        }
+
+        .condition {
+            font-size: 24px;
+            color: #0073e6;
+        }
+
+        .details {
+            padding: 20px;
+            background-color: #fafafa;
+        }
+
+        .detail-item {
+            background-color: #e3f2fd;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .label {
+            font-size: 14px;
+            color: #555555;
+        }
+
+        .value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #0073e6;
+        }
+
+        .menu {
+            display: flex;
+            flex-direction: column;
+            width: 90%;
+            max-width: 400px;
+            margin: 20px;
+        }
+
+        .menu-item {
+            margin-bottom: 10px;
+        }
+
+        @media (min-width: 600px) {
+            .container {
+                max-width: 600px;
+            }
+
+            .temp {
+                font-size: 60px;
+            }
+
+            .condition {
+                font-size: 30px;
+            }
+
+            .label {
+                font-size: 16px;
+            }
+
+            .value {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Clima en tiempo real</h1>
+            <div class="date" id="date">--</div>
+        </div>
+        <div class="main-info">
+            <div class="temp" id="temp">--°</div>
+            <div class="condition" id="condition">--</div>
+        </div>
+        <div class="details">
+            <div class="detail-item">
+                <div class="label">Índice de calidad del aire</div>
+                <div class="value" id="airQuality">--</div>
+            </div>
+            <div class="detail-item">
+                <div class="label">Índice UV</div>
+                <div class="value" id="uvIndex">--</div>
+            </div>
+            <div class="detail-item">
+                <div class="label">Humedad</div>
+                <div class="value" id="humidity">--%</</div>
+            </div>
+            <div class="detail-item">
+                <div class="label">Viento</div>
+                <div class="value" id="windSpeed">-- km/h</div>
+            </div>
+            <div class="detail-item">
+                <div class="label">Presión</div>
+                <div class="value" id="pressure">-- mb</div>
+            </div>
+        </div>
+    </div>
+    <div class="menu">
+        <div class="menu-item">
+            <label for="backgroundImage">URL de la imagen de fondo:</label>
+            <input type="text" id="backgroundImage" placeholder="https://example.com/image.jpg">
+        </div>
+        <div class="menu-item">
+            <label for="backgroundColor">Color de fondo:</label>
+            <input type="color" id="backgroundColor" value="#f0f4f8">
+        </div>
+        <div class="menu-item">
+            <label for="textColor">Color de las letras:</label>
+            <input type="color" id="textColor" value="#0073e6">
+        </div>
+        <div class="menu-item">
+            <button onclick="applyCustomization()">Aplicar Personalización</button>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/mqtt/dist/mqtt.min.js"></script>
+    <script>
+        // Configuración del cliente MQTT
+        const mqttHost = 'wss://broker.hivemq.com:8000/mqtt'; // Dirección del broker MQTT
+        const topic = 'tu/topico/mqtt'; // Tópico que estás utilizando
+
+        const client = mqtt.connect(mqttHost);
+
+        client.on('connect', function () {
+            console.log('Conectado al broker MQTT');
+            client.subscribe(topic, function (err) {
+                if (!err) {
+                    console.log('Suscrito al tópico:', topic);
+                }
+            });
+        });
+
+        client.on('message', function (topic, message) {
+            // Mensaje recibido en el tópico
+            console.log(message.toString());
+
+            // Aquí puedes parsear el mensaje y actualizar los elementos HTML con los datos recibidos
+            const data = JSON.parse(message.toString());
+            document.getElementById('temp').innerText = `${data.temp}°`;
+            document.getElementById('condition').innerText = data.condition;
+            document.getElementById('airQuality').innerText = `${data.airQuality} (${data.airQualityIndex})`;
+            document.getElementById('uvIndex').innerText = data.uvIndex;
+            document.getElementById('humidity').innerText = `${data.humidity}%`;
+            document.getElementById('windSpeed').innerText = `${data.windSpeed} km/h`;
+            document.getElementById('pressure').innerText = `${data.pressure} mb`;
+        });
+
+        // Función para cambiar el fondo de la página
+        function applyCustomization() {
+            const backgroundImage = document.getElementById('backgroundImage').value;
+            const backgroundColor = document.getElementById('backgroundColor').value;
+            const textColor = document.getElementById('textColor').value;
+
+            if (backgroundImage) {
+                document.body.style.backgroundImage = `url(${backgroundImage})`;
+                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundPosition = 'center';
+            } else {
+                document.body.style.backgroundImage = '';
+                document.body.style.backgroundColor = backgroundColor;
+            }
+
+            document.documentElement.style.setProperty('--text-color', textColor);
+            document.querySelectorAll('.header, .temp, .condition, .value').forEach(element => {
+                element.style.color = textColor;
+            });
+        }
+
+        // Estilo CSS para variables personalizadas
+        const style = document.createElement('style');
+        style.innerHTML = `
+            :root {
+                --text-color: #0073e6;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

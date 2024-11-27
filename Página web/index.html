@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.2.8/mqtt.min.js">
+    <style>
+        /* Estilos generales */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .header {
+            background-color: #ffcccc;
+            color: #333;
+            padding: 1rem;
+            width: 100%;
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+            padding: 1rem;
+        }
+        .main {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .weather-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .temperature-box {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        .weather-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            width: 100%;
+        }
+        .weather-item {
+            background-color: #e0f7fa;
+            padding: 1rem;
+            text-align: center;
+            border-radius: 8px;
+        }
+        .dashboard-toggle {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            background-color: #ff6666;
+            color: white;
+            font-size: 1.5rem;
+            padding: 0.5rem;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .dashboard {
+            display: none;
+            position: fixed;
+            bottom: 4rem;
+            right: 1rem;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            max-width: 300px;
+        }
+        .dashboard.open {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1>Clima Hoy</h1>
+            <p id="currentDate"></p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="main">
+            <div class="weather-section" id="weatherSection">
+                <div class="temperature-box" id="temperatureBox">
+                    <h3>Temperatura</h3>
+                    <p id="temperature">0°C</p>
+                </div>
+                <div class="weather-info">
+                    <div class="weather-item" id="humidityBox">
+                        <h3>Humedad</h3>
+                        <p id="humidity">0%</p>
+                    </div>
+                    <div class="weather-item" id="windSpeedBox">
+                        <h3>Velocidad del viento</h3>
+                        <p id="windSpeed">0 km/h</p>
+                    </div>
+                    <div class="weather-item" id="pressureBox">
+                        <h3>Presión atmosférica</h3>
+                        <p id="pressure">0 hPa</p>
+                    </div>
+                    <div class="weather-item" id="uvIndexBox">
+                        <h3>Índice UV</h3>
+                        <p id="uvIndex">0</p>
+                    </div>
+                    <div class="weather-item" id="airQualityBox">
+                        <h3>Calidad del aire</h3>
+                        <p id="airQuality">0</p>
+                    </div>
+                    <div class="weather-item" id="windDirectionBox">
+                        <h3>Dirección del aire</h3>
+                        <p id="windDirection">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-toggle" id="dashboardToggle">
+        <span>&#9776;</span>
+    </div>
+
+    <div class="dashboard" id="dashboard">
+        <h3>Configuración del Dashboard</h3>
+        <p>Personaliza los ajustes de la página.</p>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.2.8/mqtt.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const currentDateElement = document.getElementById("currentDate");
+            const today = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            currentDateElement.textContent = today.toLocaleDateString('es-ES', options);
+
+            const dashboardToggle = document.getElementById("dashboardToggle");
+            const dashboard = document.getElementById("dashboard");
+
+            dashboardToggle.addEventListener("click", function() {
+                dashboard.classList.toggle("open");
+            });
+
+            // Función para conectar al broker MQTT y actualizar datos en tiempo real
+            function conectarBrokerMQTT() {
+                const client = mqtt.connect('https://api.thingspeak.com/update'); // Cambia esta URL y puerto a los de tu broker MQTT
+
+                client.on('connect', function() {
+                    console.log('Conectado al broker MQTT');
+                    client.subscribe('clima/temperatura');
+                    client.subscribe('clima/humedad');
+                    client.subscribe('clima/viento');
+                    client.subscribe('clima/presion');
+                    client.subscribe('clima/uv');
+                    client.subscribe('clima/calidad_aire');
+                    client.subscribe('clima/direccion_aire');
+                });
+
+                client.on('message', function(topic, message) {
+                    const payload = message.toString();
+                    switch (topic) {
+                        case 'clima/temperatura':
+                            document.getElementById('temperature').textContent = `${payload}°C`;
+                            break;
+                        case 'clima/humedad':
+                            document.getElementById('humidity').textContent = `${payload}%`;
+                            break;
+                        case 'clima/viento':
+                            document.getElementById('windSpeed').textContent = `${payload} km/h`;
+                            break;
+                        case 'clima/presion':
+                            document.getElementById('pressure').textContent = `${payload} hPa`;
+                            break;
+                        case 'clima/uv':
+                            document.getElementById('uvIndex').textContent = payload;
+                            break;
+                        case 'clima/calidad_aire':
+                            document.getElementById('airQuality').textContent = payload;
+                            break;
+                        case 'clima/direccion_aire':
+                            document.getElementById('windDirection').textContent = payload;
+                            break;
+                    }
+                });
+
+                client.on('error', function(err) {
+                    console.error('Error al conectar con el broker MQTT:', err);
+                });
+            }
+
+            conectarBrokerMQTT(); // Llama a la función para conectar al broker y recibir datos
+        });
+    </script>    
+</body>
+</html>

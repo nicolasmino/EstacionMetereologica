@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clima hoy</title>
+    <style>
+        /* Reset de estilos básicos */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Estilos generales */
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #f3f3f3;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            position: relative;
+        }
+
+        .header {
+            background-color: rgba(33, 150, 243, 1);
+            color: #fff;
+            padding: 20px 0;
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+
+        .main {
+            padding: 20px 0;
+        }
+
+        .dashboard-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #2196F3;
+            color: #fff;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 50px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        .dashboard-toggle span {
+            font-size: 1.5em;
+        }
+
+        .dashboard {
+            background-color: rgba(255, 255, 255, 0.9);
+            position: fixed;
+            top: 0;
+            right: -250px;
+            width: 250px;
+            height: 100%;
+            padding: 20px;
+            border-radius: 0 10px 10px 0;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            transition: right 0.3s ease;
+            z-index: 100;
+            overflow-y: auto; /* Permitir desplazamiento vertical */
+        }
+
+        .dashboard.open {
+            right: 0;
+        }
+
+        .dashboard h2 {
+            font-size: 1.4em;
+            margin-bottom: 10px;
+        }
+
+        .customize-section {
+            margin-top: 20px;
+        }
+
+        .customize-section h3 {
+            font-size: 1.0em;
+            margin-bottom: 10px;
+        }
+
+        .customize-section input[type="color"], .customize-section input[type="file"] {
+            display: none; /* Ocultamos el input original */
+        }
+
+        .customize-section label {
+            display: block;
+            margin: 10px auto;
+            cursor: pointer;
+            color: #2196F3;
+            text-align: center;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
+        }
+
+        .customize-section label span {
+            display: block;
+            font-size: 1.5em;
+        }
+
+        .customize-section label:hover {
+            background-color: #f0f0f0;
+        }
+
+        .weather-section {
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            transition: background-color 0.3s ease;
+        }
+
+        .weather-section h2 {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            transition: background-color 0.3s ease;
+        }
+
+        .weather-info {
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            transition: background-color 0.3s ease;
+        }
+
+        .weather-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            grid-gap: 20px;
+        }
+
+        .weather-item {
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            transition: background-color 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .weather-item h3 {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .weather-item p {
+            font-size: 1.4em;
+        }
+
+        .footer {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 10px 0;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+
+        /* Estilos para dispositivos móviles */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 10px;
+            }
+            .header h1 {
+                font-size: 2em;
+            }
+            .dashboard {
+                width: 200px;
+                right: -200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header" id="header">
+        <div class="container">
+            <h1>Clima hoy</h1>
+        </div>
+    </header>
+
+    <!-- Dashboard Toggle Button -->
+    <div class="dashboard-toggle" id="dashboardToggle">
+        <span>&#9776;</span> <!-- Icono de hamburguesa -->
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard" id="dashboard">
+        <h2>Config</h2>
+        <div class="customize-section">
+            <h3>Color de texto</h3>
+            <label for="textColorPicker">
+                <span>&#9998;</span> <!-- Icono de pincel -->
+            </label>
+            <input type="color" id="textColorPicker" value="#000000">
+            <h3>Cambiar fondo</h3>
+            <label for="bgImageInput">
+                <span>&#128247;</span> <!-- Icono de galería -->
+            </label>
+            <input type="file" id="bgImageInput" accept="image/*">
+            <h3>Color de fondo</h3>
+            <label for="bgColorPicker">
+                <span>&#127912;</span> <!-- Icono de balde de pintura -->
+            </label>
+            <input type="color" id="bgColorPicker" value="#ffffff">
+            <h3>Remover fondo</h3>
+            <label id="removeBackground">
+                <span>&#128465;</span> <!-- Icono de tacho de basura -->
+            </label>
+            <h3>config caja</h3>
+            <input type="range" id="boxTransparency" min="0" max="1" step="0.1" value="0.5">
+            <h3>Color de caja</h3>
+            <label for="boxColorPicker">
+                <span>&#128269;</span> <!-- Icono de cubo de pintura -->
+            </label>
+            <input type="color" id="boxColorPicker" value="#c0c0c0">
+            <h3>config header</h3>
+            <label for="headerColorPicker">
+                <span>&#128396;</span> <!-- Icono de pincel para header -->
+            </label>
+            <input type="color" id="headerColorPicker" value="#2196F3">
+            <input type="range" id="headerTransparency" min="0" max="1" step="0.1" value="1">
+            <h3>Config dashboard</h3>
+            <label for="weatherBoxColorPicker">
+                <span>&#127912;</span> <!-- Icono de cubo de pintura para Weather Box -->
+            </label>
+            <input type="color" id="weatherBoxColorPicker" value="#ffffff">
+            <input type="range" id="weatherBoxTransparency" min="0" max="1" step="0.1" value="0.7">
+            <h3>config dashboard</h3>
+            <label for="dashboardBoxColorPicker">
+                <span>&#127912;</span> <!-- Icono de cubo de pintura para Dashboard Box -->
+            </label>
+            <input type="color" id="dashboardBoxColorPicker" value="#ffffff">
+            <input type="range" id="dashboardBoxTransparency" min="0" max="1" step="0.1" value="0.9">
+        </div>
+    </div>
+
+    <main class="main">
+        <div class="container">
+            <section class="weather-section">
+                <h2>Current Weather</h2>
+                <div class="weather-info">
+                    <div class="main-info">
+                        <div class="temp" id="temp">--°</div>
+                        <div class="condition" id="condition">--</div>
+                    </div>
+                    <div class="details">
+                        <div class="detail-item">
+                            <div class="label">Índice de calidad del aire</div>
+                            <div class="value" id="airQuality">--</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="label">Índice UV</div>
+                            <div class="value" id="uvIndex">--</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="label">Humedad</div>
+                            <div class="value" id="humidity">--%</</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="label">Viento</div>
+                            <div class="value" id="windSpeed">-- km/h</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="label">Presión</div>
+                            <div class="value" id="pressure">-- mb</div>
+                        </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+
+    <script>
+        
+        const dashboardToggle = document.getElementById('dashboardToggle');
+        const dashboard = document.getElementById('dashboard');
+        const textColorPicker = document.getElementById('textColorPicker');
+        const bgImageInput = document.getElementById('bgImageInput');
+        const bgColorPicker = document.getElementById('bgColorPicker');
+        const removeBackground = document.getElementById('removeBackground');
+        const boxTransparency = document.getElementById('boxTransparency');
+        const boxColorPicker = document.getElementById('boxColorPicker');
+        const headerColorPicker = document.getElementById('headerColorPicker');
+        const headerTransparency = document.getElementById('headerTransparency');
+        const header = document.getElementById('header');
+        const weatherItems = document.querySelectorAll('.weather-item');
+        const weatherSection = document.querySelector('.weather-section');
+        const weatherInfo = document.querySelector('.weather-info');
+        const weatherBoxColorPicker = document.getElementById('weatherBoxColorPicker');
+        const weatherBoxTransparency = document.getElementById('weatherBoxTransparency');
+        const dashboardBoxColorPicker = document.getElementById('dashboardBoxColorPicker');
+        const dashboardBoxTransparency = document.getElementById('dashboardBoxTransparency');
+
+        // Función para desplegar y ocultar el dashboard
+        dashboardToggle.addEventListener('click', () => {
+            dashboard.classList.toggle('open');
+        });
+
+        // Función para cambiar el color del texto
+        textColorPicker.addEventListener('input', (e) => {
+            document.body.style.color = e.target.value;
+        });
+
+        // Función para cambiar la imagen de fondo
+        bgImageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    document.body.style.backgroundImage = `url(${event.target.result})`;
+                    document.body.style.backgroundSize = 'cover'; // Ajusta la imagen al tamaño de la pantalla
+                    document.body.style.backgroundPosition = 'center'; // Centra la imagen en la pantalla
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Función para cambiar el color de fondo
+        bgColorPicker.addEventListener('input', (e) => {
+            document.body.style.backgroundColor = e.target.value;
+            document.body.style.backgroundImage = '';
+        });
+
+        // Función para eliminar el fondo
+        removeBackground.addEventListener('click', () => {
+            document.body.style.backgroundImage = '';
+            document.body.style.backgroundColor = '#f3f3f3';
+        });
+
+        // Función para cambiar la transparencia de los cuadros
+        boxTransparency.addEventListener('input', (e) => {
+            weatherItems.forEach(item => {
+                item.style.backgroundColor = `rgba(192, 192, 192, ${e.target.value})`;
+            });
+        });
+
+        // Función para cambiar el color de los cuadros
+        boxColorPicker.addEventListener('input', (e) => {
+            weatherItems.forEach(item => {
+                item.style.backgroundColor = e.target.value;
+            });
+        });
+
+        // Función para cambiar el color del fondo del header
+        headerColorPicker.addEventListener('input', (e) => {
+            header.style.backgroundColor = e.target.value;
+        });
+
+        // Función para cambiar la transparencia del fondo del header
+        headerTransparency.addEventListener('input', (e) => {
+            header.style.backgroundColor = `rgba(33, 150, 243, ${e.target.value})`;
+        });
+
+        // Función para cambiar la transparencia y el color del fondo de la caja "Current Weather"
+        weatherBoxTransparency.addEventListener('input', (e) => {
+            weatherSection.style.backgroundColor = `rgba(255, 255, 255, ${e.target.value})`;
+            weatherInfo.style.backgroundColor = `rgba(255, 255, 255, ${e.target.value})`;
+            weatherItems.forEach(item => {
+                item.style.backgroundColor = `rgba(255, 255, 255, ${e.target.value})`;
+            });
+        });
+
+        weatherBoxColorPicker.addEventListener('input', (e) => {
+            weatherSection.style.backgroundColor = e.target.value;
+            weatherInfo.style.backgroundColor = e.target.value;
+            weatherItems.forEach(item => {
+                item.style.backgroundColor = e.target.value;
+            });
+        });
+
+        // Función para cambiar la transparencia y el color del fondo del dashboard
+        dashboardBoxTransparency.addEventListener('input', (e) => {
+            dashboard.style.backgroundColor = `rgba(255, 255, 255, ${e.target.value})`;
+        });
+
+        dashboardBoxColorPicker.addEventListener('input', (e) => {
+            dashboard.style.backgroundColor = e.target.value;
+        });
+    </script>
+     <script src="https://cdn.jsdelivr.net/npm/mqtt/dist/mqtt.min.js"></script>
+     <script>
+         // Configuración del cliente MQTT
+         const mqttHost = 'wss://broker.hivemq.com:8000/mqtt'; // Dirección del broker MQTT
+         const topic = 'tu/topico/mqtt'; // Tópico que estás utilizando
+ 
+         const client = mqtt.connect(mqttHost);
+ 
+         client.on('connect', function () {
+             console.log('Conectado al broker MQTT');
+             client.subscribe(topic, function (err) {
+                 if (!err) {
+                     console.log('Suscrito al tópico:', topic);
+                 }
+             });
+         });
+ 
+         client.on('message', function (topic, message) {
+             // Mensaje recibido en el tópico
+             console.log(message.toString());
+ 
+             // Aquí puedes parsear el mensaje y actualizar los elementos HTML con los datos recibidos
+             const data = JSON.parse(message.toString());
+             document.getElementById('temp').innerText = `${data.temp}°`;
+             document.getElementById('condition').innerText = data.condition;
+             document.getElementById('airQuality').innerText = `${data.airQuality} (${data.airQualityIndex})`;
+             document.getElementById('uvIndex').innerText = data.uvIndex;
+             document.getElementById('humidity').innerText = `${data.humidity}%`;
+             document.getElementById('windSpeed').innerText = `${data.windSpeed} km/h`;
+             document.getElementById('pressure').innerText = `${data.pressure} mb`;
+         });
+    </script>
+</body>
+</html>
